@@ -379,6 +379,80 @@ func (v Value) AddIncoming(vals []Value, blocks []BasicBlock) {
 	C.LLVMAddIncoming(v.C, &vals[0].C, &blocks[0].C, C.uint(len(vals)))
 }
 
+func (b Builder) CreateGEP(t Type, value Value, indices []Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	var cIndices *C.LLVMValueRef
+	if len(indices) > 0 {
+		cIndices = &indices[0].C
+	}
+	return Value{C: C.LLVMBuildGEP2(b.C, t.C, value.C, cIndices, C.uint(len(indices)), cname)}
+}
+
+func (b Builder) CreateStructGEP(t Type, value Value, index int, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildStructGEP2(b.C, t.C, value.C, C.uint(index), cname)}
+}
+
+func (c Context) StructCreateNamed(name string) Type {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Type{C: C.LLVMStructCreateNamed(c.C, cname)}
+}
+
+func (t Type) StructSetBody(elementTypes []Type, packed bool) {
+	var cElementTypes *C.LLVMTypeRef
+	if len(elementTypes) > 0 {
+		cElementTypes = &elementTypes[0].C
+	}
+	packedInt := C.int(0)
+	if packed {
+		packedInt = 1
+	}
+	C.LLVMStructSetBody(t.C, cElementTypes, C.uint(len(elementTypes)), packedInt)
+}
+
+func ConstNull(t Type) Value {
+	return Value{C: C.LLVMConstNull(t.C)}
+}
+
+func ConstPointerNull(t Type) Value {
+	return Value{C: C.LLVMConstPointerNull(t.C)}
+}
+
+func SizeOf(t Type) Value {
+	return Value{C: C.LLVMSizeOf(t.C)}
+}
+
+func (b Builder) CreateIntToPtr(val Value, destTy Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildIntToPtr(b.C, val.C, destTy.C, cname)}
+}
+
+func (b Builder) CreatePtrToInt(val Value, destTy Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildPtrToInt(b.C, val.C, destTy.C, cname)}
+}
+
+func (b Builder) CreateBitCast(val Value, destTy Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildBitCast(b.C, val.C, destTy.C, cname)}
+}
+
+func (b Builder) CreateLoad(t Type, ptr Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildLoad2(b.C, t.C, ptr.C, cname)}
+}
+
+func (b Builder) CreateStore(val Value, ptr Value) Value {
+	return Value{C: C.LLVMBuildStore(b.C, val.C, ptr.C)}
+}
+
 // Analysis
 func VerifyModule(m Module, action C.LLVMVerifierFailureAction) error {
 	var outMessage *C.char
