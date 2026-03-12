@@ -38,6 +38,19 @@ type BasicBlock struct {
 	C C.LLVMBasicBlockRef
 }
 
+type TypeKind C.LLVMTypeKind
+
+const (
+	IntegerTypeKind TypeKind = C.LLVMIntegerTypeKind
+)
+
+type Opcode C.LLVMOpcode
+
+const (
+	Add Opcode = C.LLVMAdd
+	Sub Opcode = C.LLVMSub
+)
+
 type GenericValue struct {
 	C C.LLVMGenericValueRef
 }
@@ -92,6 +105,18 @@ func (m Module) String() string {
 	cstr := C.LLVMPrintModuleToString(m.C)
 	defer C.LLVMDisposeMessage(cstr)
 	return C.GoString(cstr)
+}
+
+func (m Module) Context() Context {
+	return Context{C: C.LLVMGetModuleContext(m.C)}
+}
+
+func (m Module) NewBuilder() Builder {
+	return Builder{C: C.LLVMCreateBuilderInContext(C.LLVMGetModuleContext(m.C))}
+}
+
+func (m Module) FirstFunction() Value {
+	return Value{C: C.LLVMGetFirstFunction(m.C)}
 }
 
 // Basic Types
@@ -183,6 +208,14 @@ func (t Type) IntTypeWidth() int {
 	return int(C.LLVMGetIntTypeWidth(t.C))
 }
 
+func (t Type) Kind() TypeKind {
+	return TypeKind(C.LLVMGetTypeKind(t.C))
+}
+
+func (t Type) IsInteger() bool {
+	return t.Kind() == IntegerTypeKind
+}
+
 // Value helpers
 func ConstInt(t Type, n uint64, signExtend bool) Value {
 	signExtendInt := C.int(0)
@@ -190,6 +223,10 @@ func ConstInt(t Type, n uint64, signExtend bool) Value {
 		signExtendInt = 1
 	}
 	return Value{C: C.LLVMConstInt(t.C, C.ulonglong(n), signExtendInt)}
+}
+
+func ConstAllOnes(t Type) Value {
+	return Value{C: C.LLVMConstAllOnes(t.C)}
 }
 
 func (v Value) Type() Type {
@@ -214,6 +251,38 @@ func (v Value) IsNil() bool {
 
 func (v Value) GlobalValueType() Type {
 	return Type{C: C.LLVMGlobalGetValueType(v.C)}
+}
+
+func (v Value) NextFunction() Value {
+	return Value{C: C.LLVMGetNextFunction(v.C)}
+}
+
+func (v Value) FirstBasicBlock() BasicBlock {
+	return BasicBlock{C: C.LLVMGetFirstBasicBlock(v.C)}
+}
+
+func (v Value) NextInstruction() Value {
+	return Value{C: C.LLVMGetNextInstruction(v.C)}
+}
+
+func (v Value) InstructionOpcode() Opcode {
+	return Opcode(C.LLVMGetInstructionOpcode(v.C))
+}
+
+func (v Value) NumOperands() int {
+	return int(C.LLVMGetNumOperands(v.C))
+}
+
+func (v Value) Operand(i int) Value {
+	return Value{C: C.LLVMGetOperand(v.C, C.uint(i))}
+}
+
+func (v Value) ReplaceAllUsesWith(other Value) {
+	C.LLVMReplaceAllUsesWith(v.C, other.C)
+}
+
+func (v Value) EraseFromParent() {
+	C.LLVMInstructionEraseFromParent(v.C)
 }
 
 // Module functions
@@ -269,6 +338,18 @@ func (b BasicBlock) Parent() Value {
 	return Value{C: C.LLVMGetBasicBlockParent(b.C)}
 }
 
+func (b BasicBlock) IsNil() bool {
+	return b.C == nil
+}
+
+func (b BasicBlock) NextBasicBlock() BasicBlock {
+	return BasicBlock{C: C.LLVMGetNextBasicBlock(b.C)}
+}
+
+func (b BasicBlock) FirstInstruction() Value {
+	return Value{C: C.LLVMGetFirstInstruction(b.C)}
+}
+
 // Builder implementation
 func NewBuilder() Builder {
 	return Builder{C: C.LLVMCreateBuilder()}
@@ -284,6 +365,10 @@ func (b Builder) Dispose() {
 
 func (b Builder) SetInsertPointAtEnd(block BasicBlock) {
 	C.LLVMPositionBuilderAtEnd(b.C, block.C)
+}
+
+func (b Builder) SetInsertPointBefore(inst Value) {
+	C.LLVMPositionBuilderBefore(b.C, inst.C)
 }
 
 func (b Builder) CreateRet(v Value) Value {
@@ -330,6 +415,42 @@ func (b Builder) CreateSRem(lhs, rhs Value, name string) Value {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 	return Value{C: C.LLVMBuildSRem(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateAnd(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildAnd(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateOr(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildOr(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateXor(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildXor(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateShl(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildShl(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateLShr(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildLShr(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateAShr(lhs, rhs Value, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildAShr(b.C, lhs.C, rhs.C, cname)}
 }
 
 type IntPredicate C.LLVMIntPredicate
