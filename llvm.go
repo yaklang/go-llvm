@@ -423,10 +423,36 @@ func (b Builder) CreateAnd(lhs, rhs Value, name string) Value {
 	return Value{C: C.LLVMBuildAnd(b.C, lhs.C, rhs.C, cname)}
 }
 
+func (b Builder) CreateGlobalStringPtr(str, name string) Value {
+	cstr := C.CString(str)
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cstr))
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildGlobalStringPtr(b.C, cstr, cname)}
+}
+
 func (b Builder) CreateOr(lhs, rhs Value, name string) Value {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 	return Value{C: C.LLVMBuildOr(b.C, lhs.C, rhs.C, cname)}
+}
+
+func (b Builder) CreateSExt(val Value, dest Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildSExt(b.C, val.C, dest.C, cname)}
+}
+
+func (b Builder) CreateZExt(val Value, dest Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildZExt(b.C, val.C, dest.C, cname)}
+}
+
+func (b Builder) CreateTrunc(val Value, dest Type, name string) Value {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	return Value{C: C.LLVMBuildTrunc(b.C, val.C, dest.C, cname)}
 }
 
 func (b Builder) CreateXor(lhs, rhs Value, name string) Value {
@@ -540,6 +566,10 @@ func ConstNull(t Type) Value {
 
 func ConstPointerNull(t Type) Value {
 	return Value{C: C.LLVMConstPointerNull(t.C)}
+}
+
+func ConstPtrToInt(val Value, dest Type) Value {
+	return Value{C: C.LLVMConstPtrToInt(val.C, dest.C)}
 }
 
 func SizeOf(t Type) Value {
