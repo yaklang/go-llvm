@@ -8,10 +8,19 @@
 //   * disableOutput=false: the output file is actually written.
 //   * A residual risk remains: a catastrophic lld/LLVM fatal error can call
 //     abort() regardless of exitEarly. ssa2llvm treats that as a hard compiler
-//     crash (one link per process; output is in a temp work dir).
+//     crash (output is in a temp work dir).
 //   * lld registers process-global signal handlers on first link; they persist.
 //     This is the accepted "bounded state coupling" of lld-as-cgo-library.
+//
+// Re-entrancy: lld keeps a process-global CommonLinkerContext (the arena, symbol
+// table, and input-file list) alive after link() returns. Without resetting it,
+// a second in-process link sees the first link's inputs (duplicate _start from
+// two work dirs, stale archive members). We destroy the context after every
+// link so each call starts fresh. This makes lld safely re-entrant when many
+// links happen in one process (e.g. the ssa2llvm test suite); single-link
+// processes (the production CLI) are unaffected.
 #include <lld/Common/Driver.h>
+#include <lld/Common/CommonLinkerContext.h>
 
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/raw_ostream.h>
@@ -54,6 +63,13 @@ int go_llvm_lld_link(int argc, char **argv,
 
   out_os.flush();
   err_os.flush();
+
+  // Reset lld's process-global state so the next link() call in this process
+  // starts with a fresh arena/symbol-table/input-file list. lld does not do
+  // this itself between calls, which would otherwise accumulate inputs across
+  // links (duplicate symbols, stale archive members).
+  if (lld::hasContext())
+    lld::CommonLinkerContext::destroy();
 
   auto copy = [](const std::string &s, char **buf, int *len) {
     *len = static_cast<int>(s.size());
