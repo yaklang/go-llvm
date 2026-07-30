@@ -30,3 +30,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Local dev symlinks for system LLVM headers (e.g. include/llvm-c-18, llvm/include/llvm-c-18)
+# These are created manually during development and point to /usr/include.
+# cgo does NOT use them — it uses the bundled headers under llvm/18.1.3/<arch>/include.
+include/
+llvm/include/
