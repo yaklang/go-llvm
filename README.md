@@ -5,7 +5,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
 
 ## Features
 
-*   **Static Linking**: Embeds LLVM static libraries (`.a`) to allow building binaries that do not depend on system LLVM installation at runtime (though system libraries like `libz`, `libzstd`, `libffi` are still required).
+*   **Static Linking**: Embeds the LLVM 18.1.3 C/C++ headers and static libraries (`.a`) so builds do not use any system LLVM install (system libraries like `libz`, `libzstd`, `libffi` are still required).
 *   **Dynamic Linking**: Supports linking against system `libLLVM.so` for faster development builds.
 *   **JIT Support**: Provides `ExecutionEngine` support, specifically using the LLVM Interpreter mode to ensure compatibility with `RunFunction` and `GenericValue` argument passing on modern LLVM versions (where MCJIT has dropped support for some features).
 *   **API Compatibility**: Interfaces are designed to be largely compatible with `tinygo.org/x/go-llvm`.
@@ -16,7 +16,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
     *   **Linux (amd64)**: Primary support.
     *   **macOS (amd64/arm64)**: Supported via Homebrew `llvm@18`.
     *   **Windows (amd64)**: Supported via MSYS2 MinGW64.
-*   **LLVM 18**: Libraries are generated from LLVM 18.1.3.
+*   **LLVM 18**: Headers and libraries are embedded from LLVM 18.1.3. No system LLVM installation is used for static builds.
 *   **System Dependencies** (for static linking):
     *   **Linux**: `libz` (`zlib1g-dev`), `libzstd` (`libzstd-dev`), `libffi` (`libffi-dev`), `libxml2` (`libxml2-dev`), `libstdc++`.
     *   **macOS**: `zlib`, `libxml2` (usually provided by system/SDK), `libcompression`.
@@ -52,7 +52,7 @@ go build -tags llvm_dynamic .
 
 ## Development & Library Generation
 
-The `llvm/` directory contains platform-specific static libraries. You must populate these for your platform if you are developing on a new machine or cross-compiling.
+The `llvm/` directory contains the platform-specific headers and static libraries. They are committed to the repository so normal builds need no system LLVM. Regenerate them only when adding a platform or upgrading LLVM.
 
 ### Linux (Debian/Ubuntu)
 

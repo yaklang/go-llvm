@@ -10,7 +10,18 @@ mkdir -p "$TARGET_DIR/lib"
 mkdir -p "$TARGET_DIR/include"
 
 echo "Copying headers..."
+rm -rf "$TARGET_DIR/include/llvm-c" "$TARGET_DIR/include/llvm"
 cp -r /usr/lib/llvm-$LLVM_VERSION/include/llvm-c "$TARGET_DIR/include/"
+cp -r /usr/lib/llvm-$LLVM_VERSION/include/llvm "$TARGET_DIR/include/"
+# lld/Common is only needed by lld_link.cpp; some distro packages ship it
+# under llvm-$LLVM_VERSION/include, others under /usr/include.
+for lld_inc in "/usr/lib/llvm-$LLVM_VERSION/include/lld" "/usr/include/lld"; do
+    if [[ -d "$lld_inc" ]]; then
+        rm -rf "$TARGET_DIR/include/lld"
+        cp -r "$lld_inc" "$TARGET_DIR/include/"
+        break
+    fi
+done
 
 echo "Copying static libraries..."
 for lib in $(llvm-config-$LLVM_VERSION --libs --link-static | xargs -n1); do
