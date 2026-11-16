@@ -17,12 +17,12 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
 *   **Supported Platforms**:
     *   **Linux (amd64)**: committed archives; primary CI target.
     *   **macOS (arm64/amd64)**: generate archives with Homebrew `llvm@18`.
-    *   **Windows (amd64, MinGW)**: generate archives with MSYS2 MinGW64 LLVM 18.
+    *   **Windows (amd64, MinGW)**: cross-build archives on Linux with `scripts/build_windows_llvm18.sh`. MSYS2 no longer ships LLVM 18, so there is no prebuilt package to copy.
 *   **LLVM 18**: Headers and libraries are embedded per platform. No system LLVM installation is used for builds once the platform directory exists.
 *   **System Dependencies** (for static linking):
     *   **Linux**: `libz` (`zlib1g-dev`), `libzstd` (`libzstd-dev`), `libffi` (`libffi-dev`), `libxml2` (`libxml2-dev`), `libstdc++`.
     *   **macOS**: `zlib`, `libxml2` (usually provided by system/SDK), `libcompression`.
-    *   **Windows (MSYS2)**: `mingw-w64-x86_64-zlib`, `mingw-w64-x86_64-zstd`, `mingw-w64-x86_64-libffi`, `mingw-w64-x86_64-libxml2`.
+    *   **Windows**: MinGW-w64 runtime only; the cross build disables zlib, zstd, libxml2 and terminfo, so no extra DLLs are needed beyond `libstdc++-6.dll` and `libwinpthread-1.dll` (or link them statically).
 
 ## Installation
 
@@ -73,12 +73,23 @@ brew install llvm@18
 scripts/generate_libs_darwin.sh
 ```
 
-### Windows (MSYS2 MinGW64)
+### Windows (amd64, MinGW)
+
+No public LLVM 18 build provides static MinGW archives: MSYS2 dropped 18 and
+`llvm-mingw`/WinLibs ship DLLs only. Build the tree on a Linux host with a
+MinGW-w64 cross toolchain:
 
 ```bash
-pacman -S mingw-w64-x86_64-llvm mingw-w64-x86_64-lld
-scripts/generate_libs_windows.sh
+sudo apt install clang cmake ninja-build g++-mingw-w64-x86-64
+scripts/build_windows_llvm18.sh
 ```
+
+The script builds LLVM 18.1.3 + LLD for `x86_64-w64-windows-gnu` and writes
+`llvm/18.1.3/windows-amd64` (X86 target only, about 190 MB). Use a local
+checkout plus a `replace` directive to build from it.
+
+If you already have a self-built LLVM 18 prefix, point
+`scripts/generate_libs_windows.sh` at it with `LLVM_PREFIX`.
 
 ### Updating Linker Flags
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Populate llvm/18.1.3/windows-amd64 from an MSYS2 MinGW64 LLVM 18 install.
-# Run this inside an MSYS2 MINGW64 shell:
+# Copy an existing MinGW LLVM 18 prefix into llvm/18.1.3/windows-amd64.
 #
-#   pacman -S mingw-w64-x86_64-llvm mingw-w64-x86_64-lld
-#   scripts/generate_libs_windows.sh
+# MSYS2 stopped shipping LLVM 18, and its package only provides DLL import
+# libraries, not the static libLLVM*.a archives go-llvm links against. Use
+# scripts/build_windows_llvm18.sh (Linux cross build) unless you already built
+# LLVM 18 yourself; in that case point LLVM_PREFIX at the install prefix:
+#
+#   LLVM_PREFIX=/c/src/llvm-install scripts/generate_libs_windows.sh
 #
 # The generated directory is local to this checkout; the repository only ships
 # the Linux archives.
