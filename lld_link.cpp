@@ -29,12 +29,21 @@
 #include <cstring>
 #include <string>
 
-// Declare the ELF driver's link() function. LLVM 18's lld/Common/Driver.h
-// exposes the per-driver link() entry points only via this macro (it expands
-// to a namespace-scope declaration of lld::elf::link). The definition is in
-// liblldELF.a (bundled). We call the ELF driver directly so no -flavor parsing
-// is needed; exitEarly=false makes lld return instead of calling exit().
+// LLVM 18's lld/Common/Driver.h declares the per-driver link() entry points
+// only through LLD_HAS_DRIVER; the definitions live in liblldELF.a,
+// liblldMachO.a and liblldMinGW.a (all bundled). Call the host driver directly
+// so no -flavor parsing is needed; exitEarly=false makes lld return instead of
+// calling exit().
+#if defined(_WIN32)
+LLD_HAS_DRIVER(mingw)
+static auto kLldLink = &lld::mingw::link;
+#elif defined(__APPLE__)
+LLD_HAS_DRIVER(macho)
+static auto kLldLink = &lld::macho::link;
+#else
 LLD_HAS_DRIVER(elf)
+static auto kLldLink = &lld::elf::link;
+#endif
 
 extern "C" {
 
@@ -58,8 +67,8 @@ int go_llvm_lld_link(int argc, char **argv,
 
   llvm::ArrayRef<const char *> args(const_cast<const char **>(argv),
                                     static_cast<size_t>(argc));
-  bool ok = lld::elf::link(args, out_os, err_os,
-                           /*exitEarly=*/false, /*disableOutput=*/false);
+  bool ok = kLldLink(args, out_os, err_os,
+                     /*exitEarly=*/false, /*disableOutput=*/false);
 
   out_os.flush();
   err_os.flush();

@@ -1,39 +1,48 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Configuration
-# Assuming MSYS2 / MinGW64 environment
-# Adjust LLVM_PREFIX if installed elsewhere
-LLVM_PREFIX="/mingw64"
-ARCH="amd64"
-TARGET_DIR="../llvm/18.1.3/$ARCH"
+# Populate llvm/18.1.3/windows-amd64 from an MSYS2 MinGW64 LLVM 18 install.
+# Run this inside an MSYS2 MINGW64 shell:
+#
+#   pacman -S mingw-w64-x86_64-llvm mingw-w64-x86_64-lld
+#   scripts/generate_libs_windows.sh
+#
+# The generated directory is local to this checkout; the repository only ships
+# the Linux archives.
 
-if [ ! -f "$LLVM_PREFIX/bin/llvm-config.exe" ]; then
-    echo "Error: llvm-config not found in /mingw64/bin. Are you in MSYS2 MinGW64 shell?"
-    echo "Please install: pacman -S mingw-w64-x86_64-llvm"
-    exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+PREFIX="${LLVM_PREFIX:-/mingw64}"
+if [[ ! -d "${PREFIX}/include/llvm-c" ]]; then
+  echo "generate_libs_windows: ${PREFIX} does not look like an MSYS2 MinGW64 prefix" >&2
+  echo "run this inside an MSYS2 MINGW64 shell, or set LLVM_PREFIX" >&2
+  exit 1
 fi
 
-mkdir -p "$TARGET_DIR/lib"
-mkdir -p "$TARGET_DIR/include"
+GOARCH=amd64
+TARGET="${REPO_ROOT}/llvm/18.1.3/windows-${GOARCH}"
+mkdir -p "${TARGET}/include" "${TARGET}/lib"
 
-echo "Copying headers..."
-cp -r "$LLVM_PREFIX/include/llvm-c" "$TARGET_DIR/include/"
-
-echo "Copying static libraries..."
-# MinGW libs are usually .a
-# llvm-config --libs gives -lLLVM..., we need to find files
-# We can just copy all .a files from lib that match libLLVM*.a
-find "$LLVM_PREFIX/lib" -maxdepth 1 -name "libLLVM*.a" -exec cp {} "$TARGET_DIR/lib/" \;
-
-echo "Copying dynamic library..."
-# On Windows, DLLs are in bin/, import libs (.dll.a) in lib/
-if [ -f "$LLVM_PREFIX/bin/libLLVM.dll" ]; then
-    cp "$LLVM_PREFIX/bin/libLLVM.dll" "$TARGET_DIR/lib/"
-fi
-# Copy import lib if exists
-if [ -f "$LLVM_PREFIX/lib/libLLVM.dll.a" ]; then
-    cp "$LLVM_PREFIX/lib/libLLVM.dll.a" "$TARGET_DIR/lib/"
+echo "[windows] copying headers from ${PREFIX}/include"
+rm -rf "${TARGET}/include/llvm-c" "${TARGET}/include/llvm" "${TARGET}/include/lld"
+cp -R "${PREFIX}/include/llvm-c" "${TARGET}/include/"
+cp -R "${PREFIX}/include/llvm" "${TARGET}/include/"
+if [[ -d "${PREFIX}/include/lld" ]]; then
+  cp -R "${PREFIX}/include/lld" "${TARGET}/include/"
+else
+  echo "[windows] warning: ${PREFIX}/include/lld missing; install mingw-w64-x86_64-lld" >&2
 fi
 
-echo "Done."
+echo "[windows] copying static archives from ${PREFIX}/lib"
+shopt -s nullglob
+libs=("${PREFIX}"/lib/libLLVM*.a "${PREFIX}"/lib/liblld*.a)
+shopt -u nullglob
+if [[ ${#libs[@]} -eq 0 ]]; then
+  echo "generate_libs_windows: no static archives under ${PREFIX}/lib" >&2
+  echo "the MSYS2 package normally ships libLLVM*.a; check for libLLVM*.dll.a only" >&2
+  exit 1
+fi
+cp "${libs[@]}" "${TARGET}/lib/"
+
+echo "[windows] done: ${TARGET}"

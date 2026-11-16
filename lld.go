@@ -1,7 +1,7 @@
 package llvm
 
 /*
-#cgo CXXFLAGS: -std=c++17 -I${SRCDIR}/llvm/18.1.3/amd64/include
+#cgo CXXFLAGS: -std=c++17
 #include <stdlib.h>
 
 extern int go_llvm_lld_link(int argc, char** argv,
@@ -17,15 +17,18 @@ import (
 	"unsafe"
 )
 
-// LinkELF drives lld's ELF linker in-process with the given argument vector.
+// Link drives lld's host linker in-process with the given argument vector.
+// The driver follows the host: ELF (lld::elf) on Linux, Mach-O (lld::macho) on
+// macOS, MinGW/PE (lld::mingw) on Windows.
 // args excludes the leading program name; a dummy "ld.lld" argv[0] is added.
 // exitEarly=false is forced so lld returns instead of calling exit() after a
 // completed link. On failure the returned error carries lld's stderr output.
 //
 // lld must be linked into the binary as a cgo/C++ library (see lld_link.cpp);
-// it is not invoked as a subprocess. Callers must pass -nostdlib and explicit
-// crt/libc/archive paths to avoid any system library search.
-func LinkELF(args []string) error {
+// it is not invoked as a subprocess. Linkers select host libraries on their
+// own, so callers that need a self-contained binary must pass explicit crt and
+// archive paths for the host platform.
+func Link(args []string) error {
 	if len(args) == 0 {
 		return errors.New("lld.LinkELF: empty args")
 	}
@@ -57,9 +60,12 @@ func LinkELF(args []string) error {
 	if rc != 0 {
 		msg := strings.TrimSpace(stderrStr)
 		if msg == "" {
-			msg = "lld elf link failed (no diagnostics captured)"
+			msg = "lld link failed (no diagnostics captured)"
 		}
 		return errors.New("lld: " + msg)
 	}
 	return nil
 }
+
+// LinkELF is kept for callers written for the Linux-only API. It is Link.
+func LinkELF(args []string) error { return Link(args) }

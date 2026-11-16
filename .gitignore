@@ -30,3 +30,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Platform artifacts generated locally by scripts/generate_libs_*.sh.
+# Only llvm/18.1.3/linux-amd64 is committed; delete these lines to commit a
+# generated platform tree.
+llvm/18.1.3/darwin-*/
+llvm/18.1.3/windows-*/
