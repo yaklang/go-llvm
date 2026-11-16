@@ -99,7 +99,7 @@ fi
 mkdir -p "${TARGET}/include" "${TARGET}/lib"
 cp -R "${SRC}/llvm/include/llvm" "${SRC}/llvm/include/llvm-c" "${TARGET}/include/"
 cp -R "${SRC}/lld/include/lld" "${TARGET}/include/"
-cp "${WORK}/build-win/include/llvm/Config/"* "${TARGET}/include/llvm/Config/"
+cp "${WORK}/build-win/include/llvm/Config/"*.h "${WORK}/build-win/include/llvm/Config/"*.def "${TARGET}/include/llvm/Config/"
 cp "${WORK}"/build-win/lib/libLLVM*.a "${WORK}"/build-win/lib/liblld*.a "${TARGET}/lib/"
 x86_64-w64-mingw32-ranlib "${TARGET}"/lib/*.a
 
