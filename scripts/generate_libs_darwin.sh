@@ -34,7 +34,7 @@ if [[ ! -d "${PREFIX}/include/llvm-c" ]]; then
 fi
 
 LIB_TARGET="${REPO_ROOT}/native/darwin-${GOARCH}/lib"
-INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/include"
+INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/darwin-${GOARCH}/include"
 mkdir -p "${INCLUDE_TARGET}" "${LIB_TARGET}"
 
 echo "[darwin] copying headers from ${PREFIX}/include"

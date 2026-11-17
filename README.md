@@ -6,7 +6,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
 ## Features
 
 *   **Static Linking**: Embeds the LLVM 18.1.3 C/C++ headers and static libraries (`.a`) so builds do not use any system LLVM install (system libraries like `libz`, `libzstd`, `libffi` are still required).
-*   **One module per platform**: The main module holds the public API and the LLVM 18.1.3 headers. Each platform's static archives live in their own Go module under `native/<goos>-<goarch>/`, with a `link.go` that carries the cgo link flags. `native/linux-amd64`, `native/windows-amd64` and `native/darwin-arm64` are shipped. Callers still import `github.com/yaklang/go-llvm` only.
+*   **One module per platform**: The main module holds the public API and one LLVM 18 header tree per platform under `llvm/18.1.3/<goos>-<goarch>/include`. Each platform's static archives live in their own Go module under `native/<goos>-<goarch>/`, with a `link.go` that carries the cgo link flags. `native/linux-amd64`, `native/windows-amd64` and `native/darwin-arm64` are shipped. Callers still import `github.com/yaklang/go-llvm` only.
 *   **Host lld driver**: the in-process linker uses `lld::elf` on Linux, `lld::macho` on macOS, and `lld::mingw` on Windows.
 *   **Dynamic Linking**: Supports linking against system `libLLVM.so` for faster development builds.
 *   **JIT Support**: Provides `ExecutionEngine` support, specifically using the LLVM Interpreter mode to ensure compatibility with `RunFunction` and `GenericValue` argument passing on modern LLVM versions (where MCJIT has dropped support for some features).
@@ -18,7 +18,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
     *   **Linux (amd64)**: shipped archives; primary CI target.
     *   **macOS (arm64)**: shipped archives. `darwin/amd64` is not shipped; build against a Homebrew `llvm@18` install instead.
     *   **Windows (amd64, MinGW)**: shipped archives, X86 target only. Regenerate with `scripts/build_windows_llvm18.sh` on Linux; MSYS2 no longer ships LLVM 18.
-*   **LLVM 18**: Headers and libraries are embedded per platform. No system LLVM installation is used for builds.
+*   **LLVM 18**: Headers and libraries are embedded per platform, each tree matching its own build. No system LLVM installation is used for builds.
 *   **System Dependencies** (for static linking):
     *   **Linux**: `libz` (`zlib1g-dev`), `libzstd` (`libzstd-dev`), `libffi` (`libffi-dev`), `libxml2` (`libxml2-dev`), `libstdc++`.
     *   **macOS**: `zlib`, `libxml2` (usually provided by system/SDK), `libcompression`.
@@ -56,24 +56,33 @@ go build -tags llvm_dynamic .
 ## Module layout
 
 ```
-go-llvm                        module github.com/yaklang/go-llvm
-  llvm/18.1.3/include/         LLVM 18.1.3 headers, shared by every platform
-  native/linux-amd64/          module .../native/linux-amd64   296 MiB
+go-llvm                          module github.com/yaklang/go-llvm   67 MiB
+  llvm/18.1.3/linux-amd64/include/     23.8 MiB, LLVM_NATIVE_ARCH X86
+  llvm/18.1.3/windows-amd64/include/   19.3 MiB, LLVM_NATIVE_ARCH X86
+  llvm/18.1.3/darwin-arm64/include/    23.8 MiB, LLVM_NATIVE_ARCH AArch64
+  native/linux-amd64/            module .../native/linux-amd64      296 MiB
     go.mod
-    link.go                    #cgo LDFLAGS for this platform
+    link.go                      #cgo LDFLAGS for this platform
     lib/*.a
-  native/windows-amd64/        module .../native/windows-amd64 164 MiB
-  native/darwin-arm64/         module .../native/darwin-arm64  220 MiB
+  native/windows-amd64/          module .../native/windows-amd64    164 MiB
+  native/darwin-arm64/           module .../native/darwin-arm64     220 MiB
 ```
 
 Modules in this repository are split because the Go module proxy rejects a
 module whose unpacked source tree exceeds 500 MiB. Splitting keeps every module
-far below that limit; the main module is about 24 MiB.
+far below that limit; the largest one is 296 MiB.
+
+Headers stay in the main module because cgo include flags only apply to the
+package that is being compiled. Each platform keeps its own copy: `llvm/Config/llvm-config.h`
+defines `LLVM_NATIVE_ARCH`, and the inline `LLVMInitializeNativeTarget` in
+`llvm-c/Target.h` registers exactly that backend. A shared header set would make
+macOS arm64 register X86 and fail with "No available targets".
 
 `go build` for one platform downloads the main module plus only that platform's
-module. The main `go.mod` requires all three platform modules, so `go get`,
-`go mod tidy` and a bare `go mod download` fetch all of them (about 700 MiB
-together). That is a download-size cost only; no module hits the size limit.
+module. The main `go.mod` requires all three platform modules, so `go mod tidy`
+and `go mod download all` fetch all four modules (about 750 MiB together). A
+bare `go mod download` fetches three of them on Linux: main, linux-amd64 and
+windows-amd64. That is a download-size cost only; no module hits the size limit.
 
 `link.go` in each platform module holds `-L${SRCDIR}/lib` and the `-l` flags, so
 the flags travel with the archives and `${SRCDIR}` resolves inside the module
@@ -94,9 +103,8 @@ scripts/build_windows_llvm18.sh
 ```
 
 The scripts copy archives into `native/<goos>-<goarch>/lib` and headers into
-`llvm/18.1.3/include`. The Linux 18.1.3 headers are the shared set used for all
-platforms. The link flag list in `link.go` is written by hand; update it when the
-archive set changes.
+`llvm/18.1.3/<goos>-<goarch>/include`. The link flag list in `link.go` is written
+by hand; update it when the archive set changes.
 
 ## Updating Linker Flags
 

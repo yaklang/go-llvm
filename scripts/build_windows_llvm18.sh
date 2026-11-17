@@ -24,6 +24,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORK="${1:-${REPO_ROOT}/../llvm18-windows-build}"
 SRC="${WORK}/llvm-project-${LLVM_VERSION}.src"
 LIB_TARGET="${REPO_ROOT}/native/windows-amd64/lib"
+INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/windows-amd64/include"
 
 for tool in clang clang++ cmake ninja x86_64-w64-mingw32-gcc x86_64-w64-mingw32-g++; do
   if ! command -v "${tool}" >/dev/null 2>&1; then
@@ -100,9 +101,11 @@ mkdir -p "${LIB_TARGET}"
 cp "${WORK}"/build-win/lib/libLLVM*.a "${WORK}"/build-win/lib/liblld*.a "${LIB_TARGET}/"
 x86_64-w64-mingw32-ranlib "${LIB_TARGET}"/*.a
 
-# Headers come from the shared 18.1.3 tree in llvm/18.1.3/include; the
-# target-specific llvm/Config headers of this cross build stay in the build dir
-# and are not committed.
+echo "[windows] populating ${INCLUDE_TARGET}"
+mkdir -p "${INCLUDE_TARGET}"
+cp -R "${SRC}/llvm/include/llvm" "${SRC}/llvm/include/llvm-c" "${INCLUDE_TARGET}/"
+cp -R "${SRC}/lld/include/lld" "${INCLUDE_TARGET}/"
+cp "${WORK}/build-win/include/llvm/Config/"* "${INCLUDE_TARGET}/llvm/Config/"
 
 for lib in libLLVMCore.a libLLVMSupport.a liblldCommon.a liblldMinGW.a; do
   if [[ ! -f "${LIB_TARGET}/${lib}" ]]; then

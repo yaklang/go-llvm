@@ -25,7 +25,7 @@ fi
 
 GOARCH=amd64
 LIB_TARGET="${REPO_ROOT}/native/windows-${GOARCH}/lib"
-INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/include"
+INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/windows-${GOARCH}/include"
 mkdir -p "${INCLUDE_TARGET}" "${LIB_TARGET}"
 
 echo "[windows] copying headers from ${PREFIX}/include"
