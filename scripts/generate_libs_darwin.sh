@@ -57,3 +57,4 @@ fi
 cp "${libs[@]}" "${TARGET}/lib/"
 
 echo "[darwin] done: ${TARGET}"
+echo "[darwin] run scripts/trim_platform_assets.py to drop non-host backends and dedupe headers"

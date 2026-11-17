@@ -31,9 +31,9 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# macOS artifacts are generated locally by scripts/generate_libs_darwin.sh.
-# linux-amd64 and windows-amd64 are committed.
-llvm/18.1.3/darwin-*/
+# linux-amd64, windows-amd64, and darwin-arm64 are committed with the shared
+# header root llvm/18.1.3/include. Regenerate a missing platform tree with the
+# scripts under scripts/.
 
 # Local build scratch space
 build/
