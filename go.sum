@@ -1,0 +1,6 @@
+github.com/yaklang/go-llvm/native/darwin-arm64 v0.0.0-20261117093357-b6b843bac29d h1:GCZwepe8TDemZorJPqPTq/Jb+BimfRcaR9KcP+0LCbk=
+github.com/yaklang/go-llvm/native/darwin-arm64 v0.0.0-20261117093357-b6b843bac29d/go.mod h1:PRMOF+SobGfeYmBNar/A+7d97ieFxVk3upsKGYTBrBk=
+github.com/yaklang/go-llvm/native/linux-amd64 v0.0.0-20261117093357-b6b843bac29d h1:SzP6EuTnXwtegd4uMxg9FtUchhRT4Ga5E6Teaobyudw=
+github.com/yaklang/go-llvm/native/linux-amd64 v0.0.0-20261117093357-b6b843bac29d/go.mod h1:y0BoS65tGzksZvHL6mI5nlkflRo71f7JAoDLgJVKEAs=
+github.com/yaklang/go-llvm/native/windows-amd64 v0.0.0-20261117093357-b6b843bac29d h1:lHbRLaWT0qzXbinUlMK+mfRvAJXPMB6S9uwdtOzwcyo=
+github.com/yaklang/go-llvm/native/windows-amd64 v0.0.0-20261117093357-b6b843bac29d/go.mod h1:xHuy7wP/srx3dPRkpBKmMvlcvgpZqKn3SHh1b4UaoGs=
