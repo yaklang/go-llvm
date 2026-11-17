@@ -31,8 +31,9 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# Platform artifacts generated locally by scripts/generate_libs_*.sh.
-# Only llvm/18.1.3/linux-amd64 is committed; delete these lines to commit a
-# generated platform tree.
+# macOS artifacts are generated locally by scripts/generate_libs_darwin.sh.
+# linux-amd64 and windows-amd64 are committed.
 llvm/18.1.3/darwin-*/
-llvm/18.1.3/windows-*/
+
+# Local build scratch space
+build/

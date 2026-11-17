@@ -6,7 +6,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
 ## Features
 
 *   **Static Linking**: Embeds the LLVM 18.1.3 C/C++ headers and static libraries (`.a`) so builds do not use any system LLVM install (system libraries like `libz`, `libzstd`, `libffi` are still required).
-*   **Per-platform layout**: Assets live under `llvm/18.1.3/<goos>-<goarch>/`. `linux-amd64` is committed; Windows archives are fetched from a release asset; macOS archives are generated locally by the scripts below.
+*   **Per-platform layout**: Assets live under `llvm/18.1.3/<goos>-<goarch>/`. `linux-amd64` and `windows-amd64` are committed; macOS archives are generated locally by the script below.
 *   **Host lld driver**: the in-process linker uses `lld::elf` on Linux, `lld::macho` on macOS, and `lld::mingw` on Windows.
 *   **Dynamic Linking**: Supports linking against system `libLLVM.so` for faster development builds.
 *   **JIT Support**: Provides `ExecutionEngine` support, specifically using the LLVM Interpreter mode to ensure compatibility with `RunFunction` and `GenericValue` argument passing on modern LLVM versions (where MCJIT has dropped support for some features).
@@ -17,7 +17,7 @@ This library serves as a replacement for `tinygo.org/x/go-llvm` with enhanced su
 *   **Supported Platforms**:
     *   **Linux (amd64)**: committed archives; primary CI target.
     *   **macOS (arm64/amd64)**: generate archives with Homebrew `llvm@18`.
-    *   **Windows (amd64, MinGW)**: run `scripts/fetch_windows_llvm18.sh` to unpack the prebuilt archives, or cross-build them on Linux with `scripts/build_windows_llvm18.sh`. MSYS2 no longer ships LLVM 18, so there is no distro package to copy.
+    *   **Windows (amd64, MinGW)**: committed archives (X86 only). Regenerate with `scripts/build_windows_llvm18.sh` on Linux, or unpack the release asset with `scripts/fetch_windows_llvm18.sh`. MSYS2 no longer ships LLVM 18, so there is no distro package to copy.
 *   **LLVM 18**: Headers and libraries are embedded per platform. No system LLVM installation is used for builds once the platform directory exists.
 *   **System Dependencies** (for static linking):
     *   **Linux**: `libz` (`zlib1g-dev`), `libzstd` (`libzstd-dev`), `libffi` (`libffi-dev`), `libxml2` (`libxml2-dev`), `libstdc++`.
@@ -66,6 +66,13 @@ sudo apt install llvm-18-dev liblld-18-dev libz-dev libzstd-dev libffi-dev libxm
 scripts/generate_libs_linux.sh
 ```
 
+The committed `linux-amd64` tree keeps only the X86 backend: 172 MB of archives
+instead of 296 MB. `targets_x86_only.cpp` supplies empty init symbols for the
+other backends, because lld's Driver.cpp.o inlines `llvm::InitializeAllTarget*`
+and would otherwise pull every backend into the link. The script above still
+generates the full multi-target set; delete the non-X86 archives and rerun the
+config step if you want the trimmed layout.
+
 ### macOS
 
 ```bash
@@ -75,30 +82,20 @@ scripts/generate_libs_darwin.sh
 
 ### Windows (amd64, MinGW)
 
-No public LLVM 18 build provides static MinGW archives: MSYS2 dropped 18 and
-`llvm-mingw`/WinLibs ship DLLs only. Two options, both writing
-`llvm/18.1.3/windows-amd64`:
+`llvm/18.1.3/windows-amd64` is committed: LLVM 18.1.3 + LLD cross-built for
+`x86_64-w64-windows-gnu`, X86 target only, about 188 MB. `go get` works without
+any extra step; MinGW-w64 provides the C compiler at build time.
 
-```bash
-scripts/fetch_windows_llvm18.sh   # unpack the prebuilt release asset (~31 MB download)
-```
+Regenerate the tree on a Linux host when the LLVM version or build options
+change:
 
 ```bash
 sudo apt install clang cmake ninja-build g++-mingw-w64-x86-64
-scripts/build_windows_llvm18.sh   # cross-build LLVM 18.1.3 + LLD from source
+scripts/build_windows_llvm18.sh
 ```
 
-The unpacked tree is about 188 MB. It is deliberately not committed: together
-with `linux-amd64` the module source tree would exceed the 500 MiB limit that
-module proxies enforce, and `go get` would fail. Because the Go module cache is
-read-only, build Windows from a local checkout plus a `replace` directive:
-
-```
-replace github.com/yaklang/go-llvm => /path/to/go-llvm
-```
-
-If you already have a self-built LLVM 18 prefix, point
-`scripts/generate_libs_windows.sh` at it with `LLVM_PREFIX`.
+If a checkout is missing the tree, `scripts/fetch_windows_llvm18.sh` unpacks the
+same tree from the release asset after verifying its sha256.
 
 ### Updating Linker Flags
 
