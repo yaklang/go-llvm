@@ -24,15 +24,16 @@ if [[ ! -d "${PREFIX}/include/llvm-c" ]]; then
 fi
 
 GOARCH=amd64
-TARGET="${REPO_ROOT}/llvm/18.1.3/windows-${GOARCH}"
-mkdir -p "${TARGET}/include" "${TARGET}/lib"
+LIB_TARGET="${REPO_ROOT}/native/windows-${GOARCH}/lib"
+INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/include"
+mkdir -p "${INCLUDE_TARGET}" "${LIB_TARGET}"
 
 echo "[windows] copying headers from ${PREFIX}/include"
-rm -rf "${TARGET}/include/llvm-c" "${TARGET}/include/llvm" "${TARGET}/include/lld"
-cp -R "${PREFIX}/include/llvm-c" "${TARGET}/include/"
-cp -R "${PREFIX}/include/llvm" "${TARGET}/include/"
+rm -rf "${INCLUDE_TARGET}/llvm-c" "${INCLUDE_TARGET}/llvm" "${INCLUDE_TARGET}/lld"
+cp -R "${PREFIX}/include/llvm-c" "${INCLUDE_TARGET}/"
+cp -R "${PREFIX}/include/llvm" "${INCLUDE_TARGET}/"
 if [[ -d "${PREFIX}/include/lld" ]]; then
-  cp -R "${PREFIX}/include/lld" "${TARGET}/include/"
+  cp -R "${PREFIX}/include/lld" "${INCLUDE_TARGET}/"
 else
   echo "[windows] warning: ${PREFIX}/include/lld missing; install mingw-w64-x86_64-lld" >&2
 fi
@@ -46,6 +47,6 @@ if [[ ${#libs[@]} -eq 0 ]]; then
   echo "the MSYS2 package normally ships libLLVM*.a; check for libLLVM*.dll.a only" >&2
   exit 1
 fi
-cp "${libs[@]}" "${TARGET}/lib/"
+cp "${libs[@]}" "${LIB_TARGET}/"
 
-echo "[windows] done: ${TARGET}"
+echo "[windows] done: ${LIB_TARGET}"

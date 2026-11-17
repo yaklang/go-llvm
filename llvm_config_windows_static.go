@@ -1,13 +1,12 @@
-//go:build !llvm_dynamic && windows
-// +build !llvm_dynamic,windows
+//go:build windows && amd64 && !llvm_dynamic
 
 package llvm
 
 /*
-#cgo windows,amd64 CFLAGS: -I${SRCDIR}/llvm/18.1.3/windows-amd64/include
-#cgo windows,amd64 CFLAGS: -I${SRCDIR}/llvm/18.1.3/include
-#cgo windows,amd64 CXXFLAGS: -I${SRCDIR}/llvm/18.1.3/windows-amd64/include
-#cgo windows,amd64 CXXFLAGS: -I${SRCDIR}/llvm/18.1.3/include
-#cgo windows,amd64 LDFLAGS: -L${SRCDIR}/llvm/18.1.3/windows-amd64/lib -static -Wl,--start-group -llldCOFF -llldCommon -llldMinGW -lLLVMAggressiveInstCombine -lLLVMAnalysis -lLLVMAsmParser -lLLVMAsmPrinter -lLLVMBinaryFormat -lLLVMBitReader -lLLVMBitWriter -lLLVMBitstreamReader -lLLVMCFGuard -lLLVMCFIVerify -lLLVMCodeGen -lLLVMCodeGenTypes -lLLVMCore -lLLVMCoroutines -lLLVMCoverage -lLLVMDWARFLinker -lLLVMDWARFLinkerClassic -lLLVMDWARFLinkerParallel -lLLVMDWP -lLLVMDebugInfoBTF -lLLVMDebugInfoCodeView -lLLVMDebugInfoDWARF -lLLVMDebugInfoGSYM -lLLVMDebugInfoLogicalView -lLLVMDebugInfoMSF -lLLVMDebugInfoPDB -lLLVMDebuginfod -lLLVMDemangle -lLLVMDiff -lLLVMDlltoolDriver -lLLVMExecutionEngine -lLLVMExegesis -lLLVMExegesisX86 -lLLVMExtensions -lLLVMFileCheck -lLLVMFrontendDriver -lLLVMFrontendHLSL -lLLVMFrontendOffloading -lLLVMFrontendOpenACC -lLLVMFrontendOpenMP -lLLVMFuzzMutate -lLLVMFuzzerCLI -lLLVMGlobalISel -lLLVMHipStdPar -lLLVMIRPrinter -lLLVMIRReader -lLLVMInstCombine -lLLVMInstrumentation -lLLVMInterfaceStub -lLLVMInterpreter -lLLVMJITLink -lLLVMLTO -lLLVMLibDriver -lLLVMLineEditor -lLLVMLinker -lLLVMMC -lLLVMMCA -lLLVMMCDisassembler -lLLVMMCJIT -lLLVMMCParser -lLLVMMIRParser -lLLVMObjCARCOpts -lLLVMObjCopy -lLLVMObject -lLLVMObjectYAML -lLLVMOption -lLLVMOrcDebugging -lLLVMOrcJIT -lLLVMOrcShared -lLLVMOrcTargetProcess -lLLVMPasses -lLLVMProfileData -lLLVMRemarks -lLLVMRuntimeDyld -lLLVMScalarOpts -lLLVMSelectionDAG -lLLVMSupport -lLLVMSymbolize -lLLVMTableGen -lLLVMTableGenCommon -lLLVMTableGenGlobalISel -lLLVMTarget -lLLVMTargetParser -lLLVMTextAPI -lLLVMTextAPIBinaryReader -lLLVMTransformUtils -lLLVMVectorize -lLLVMWindowsDriver -lLLVMWindowsManifest -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMX86Desc -lLLVMX86Disassembler -lLLVMX86Info -lLLVMX86TargetMCA -lLLVMXRay -lLLVMipo -Wl,--end-group -lstdc++ -lwinpthread -lpsapi -lshell32 -lole32 -luuid -ladvapi32 -lws2_32 -loleaut32 -luxtheme -lversion
+#cgo CFLAGS: -I${SRCDIR}/llvm/18.1.3/include
+#cgo CXXFLAGS: -I${SRCDIR}/llvm/18.1.3/include
 */
 import "C"
+
+// The platform archives and their link flags live in a per-platform module.
+import _ "github.com/yaklang/go-llvm/native/windows-amd64"

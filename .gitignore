@@ -31,9 +31,8 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# linux-amd64, windows-amd64, and darwin-arm64 are committed with the shared
-# header root llvm/18.1.3/include. Regenerate a missing platform tree with the
-# scripts under scripts/.
+# LLVM 18.1.3 headers live in llvm/18.1.3/include; platform archives live in
+# native/<goos>-<goarch>/lib, one Go module each. Both are committed.
 
 # Local build scratch space
 build/

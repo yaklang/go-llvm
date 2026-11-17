@@ -1,11 +1,10 @@
-//go:build llvm_dynamic && windows
-// +build llvm_dynamic,windows
+//go:build llvm_dynamic && windows && amd64
 
 package llvm
 
 /*
-#cgo windows,amd64 CFLAGS: -I${SRCDIR}/llvm/18.1.3/windows-amd64/include
-#cgo windows,amd64 CXXFLAGS: -I${SRCDIR}/llvm/18.1.3/windows-amd64/include
-#cgo windows,amd64 LDFLAGS: -L${SRCDIR}/llvm/18.1.3/windows-amd64/lib -lLLVM -lws2_32 -lole32 -luuid -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -ladvapi32 -lversion
+#cgo CFLAGS: -I${SRCDIR}/llvm/18.1.3/include
+#cgo CXXFLAGS: -I${SRCDIR}/llvm/18.1.3/include
+#cgo LDFLAGS: -lLLVM -lws2_32 -lole32 -luuid -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -ladvapi32 -lversion
 */
 import "C"

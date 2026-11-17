@@ -33,15 +33,16 @@ if [[ ! -d "${PREFIX}/include/llvm-c" ]]; then
   exit 1
 fi
 
-TARGET="${REPO_ROOT}/llvm/18.1.3/darwin-${GOARCH}"
-mkdir -p "${TARGET}/include" "${TARGET}/lib"
+LIB_TARGET="${REPO_ROOT}/native/darwin-${GOARCH}/lib"
+INCLUDE_TARGET="${REPO_ROOT}/llvm/18.1.3/include"
+mkdir -p "${INCLUDE_TARGET}" "${LIB_TARGET}"
 
 echo "[darwin] copying headers from ${PREFIX}/include"
-rm -rf "${TARGET}/include/llvm-c" "${TARGET}/include/llvm" "${TARGET}/include/lld"
-cp -R "${PREFIX}/include/llvm-c" "${TARGET}/include/"
-cp -R "${PREFIX}/include/llvm" "${TARGET}/include/"
+rm -rf "${INCLUDE_TARGET}/llvm-c" "${INCLUDE_TARGET}/llvm" "${INCLUDE_TARGET}/lld"
+cp -R "${PREFIX}/include/llvm-c" "${INCLUDE_TARGET}/"
+cp -R "${PREFIX}/include/llvm" "${INCLUDE_TARGET}/"
 if [[ -d "${PREFIX}/include/lld" ]]; then
-  cp -R "${PREFIX}/include/lld" "${TARGET}/include/"
+  cp -R "${PREFIX}/include/lld" "${INCLUDE_TARGET}/"
 else
   echo "[darwin] warning: ${PREFIX}/include/lld missing; Mach-O lld headers unavailable" >&2
 fi
@@ -54,7 +55,7 @@ if [[ ${#libs[@]} -eq 0 ]]; then
   echo "generate_libs_darwin: no static archives under ${PREFIX}/lib" >&2
   exit 1
 fi
-cp "${libs[@]}" "${TARGET}/lib/"
+cp "${libs[@]}" "${LIB_TARGET}/"
 
-echo "[darwin] done: ${TARGET}"
+echo "[darwin] done: ${LIB_TARGET}"
 echo "[darwin] run scripts/trim_platform_assets.py to drop non-host backends and dedupe headers"

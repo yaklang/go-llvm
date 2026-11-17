@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Cross-build LLVM 18.1.3 + LLD for Windows amd64 (MinGW) on a Linux host and
-# populate llvm/18.1.3/windows-amd64.
+# populate native/windows-amd64/lib.
 #
 # Why: MSYS2 no longer ships LLVM 18 and no public download provides static
 # MinGW archives for it, so the Windows tree has to be built from source. This
@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORK="${1:-${REPO_ROOT}/../llvm18-windows-build}"
 SRC="${WORK}/llvm-project-${LLVM_VERSION}.src"
-TARGET="${REPO_ROOT}/llvm/18.1.3/windows-amd64"
+LIB_TARGET="${REPO_ROOT}/native/windows-amd64/lib"
 
 for tool in clang clang++ cmake ninja x86_64-w64-mingw32-gcc x86_64-w64-mingw32-g++; do
   if ! command -v "${tool}" >/dev/null 2>&1; then
@@ -92,22 +92,23 @@ cmake "${common_cmake[@]}" -B "${WORK}/build-win" \
 echo "[windows] building"
 ninja -C "${WORK}/build-win" -j"$(nproc)"
 
-echo "[windows] populating ${TARGET}"
-if [[ -d "${TARGET}" ]]; then
-  find "${TARGET}" -mindepth 1 -delete
+echo "[windows] populating ${LIB_TARGET}"
+if [[ -d "${LIB_TARGET}" ]]; then
+  find "${LIB_TARGET}" -mindepth 1 -delete
 fi
-mkdir -p "${TARGET}/include" "${TARGET}/lib"
-cp -R "${SRC}/llvm/include/llvm" "${SRC}/llvm/include/llvm-c" "${TARGET}/include/"
-cp -R "${SRC}/lld/include/lld" "${TARGET}/include/"
-cp "${WORK}/build-win/include/llvm/Config/"* "${TARGET}/include/llvm/Config/"
-cp "${WORK}"/build-win/lib/libLLVM*.a "${WORK}"/build-win/lib/liblld*.a "${TARGET}/lib/"
-x86_64-w64-mingw32-ranlib "${TARGET}"/lib/*.a
+mkdir -p "${LIB_TARGET}"
+cp "${WORK}"/build-win/lib/libLLVM*.a "${WORK}"/build-win/lib/liblld*.a "${LIB_TARGET}/"
+x86_64-w64-mingw32-ranlib "${LIB_TARGET}"/*.a
+
+# Headers come from the shared 18.1.3 tree in llvm/18.1.3/include; the
+# target-specific llvm/Config headers of this cross build stay in the build dir
+# and are not committed.
 
 for lib in libLLVMCore.a libLLVMSupport.a liblldCommon.a liblldMinGW.a; do
-  if [[ ! -f "${TARGET}/lib/${lib}" ]]; then
+  if [[ ! -f "${LIB_TARGET}/${lib}" ]]; then
     echo "build_windows_llvm18: ${lib} missing from the build" >&2
     exit 1
   fi
 done
 
-echo "[windows] done: ${TARGET}"
+echo "[windows] done: ${LIB_TARGET}"
